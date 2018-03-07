@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -55,15 +56,21 @@ public class MorseDecoder {
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
+            double sum = 0;
+            inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            for (int i = 0; i < sampleBuffer.length; i++) {
+                sum += sampleBuffer[i];
+            }
+            returnBuffer[binIndex] = sum;
         }
         return returnBuffer;
     }
 
     /** Power threshold for power or no power. You may need to modify this value. */
-    private static final double POWER_THRESHOLD = 10;
+    private static final double POWER_THRESHOLD = .2;
 
     /** Bin threshold for dots or dashes. Related to BIN_SIZE. You may need to modify this value. */
-    private static final int DASH_BIN_COUNT = 8;
+    private static final int DASH_BIN_COUNT = 2;
 
     /**
      * Convert power measurements to dots, dashes, and spaces.
@@ -87,7 +94,45 @@ public class MorseDecoder {
         // else if issilence and wassilence
         // else if issilence and not wassilence
 
-        return "";
+        System.out.println(Arrays.toString(powerMeasurements));
+
+        String output = "";
+        boolean wasPower = true, isPower = false;
+        int counter = 0;
+
+        //int i = 0; i < powerMeasurements.length; i++
+        for (double measurement : powerMeasurements) {
+            if (measurement > POWER_THRESHOLD) {
+                isPower = true;
+                if (wasPower) {
+                    counter++;
+                } else {
+                    System.out.println(counter);
+                    if (counter > DASH_BIN_COUNT) {
+                        output += " ";
+                    }
+                    counter = 0;
+                }
+                wasPower = isPower;
+            } else {
+                isPower = false;
+                if (wasPower) {
+                    System.out.println(counter);
+                    if (counter > DASH_BIN_COUNT) {
+                        output += "-";
+                    } else {
+                        output += ".";
+                    }
+                    counter = 0;
+                } else {
+                    counter++;
+                }
+                wasPower = isPower;
+            }
+        }
+
+        System.out.println(output);
+        return output;
     }
 
     /**
